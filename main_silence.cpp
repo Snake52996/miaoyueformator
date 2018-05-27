@@ -42,10 +42,12 @@ int main()
 
     unamed.initialize(2);
     listFiles(dir);
+    /*
     PrintStringAndEndlineSlower("We have finished our work. Here we go!", 25);
     string command = "explorer.exe " + result_path + "/";
     ChangeSlantIntoBackSlant(command);
     system(command.c_str());  //打开资源管理器显示结果
+    */
     return 0;
 }
 

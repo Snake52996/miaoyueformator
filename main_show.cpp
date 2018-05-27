@@ -40,8 +40,9 @@ int main()
     result_path = temp;
     ChangeBackSlantIntoSlant(result_path);
 
-    unamed.initialize(2);
-    listFiles(dir);
+    //unamed.initialize(2);
+    //listFiles(dir);
+    Sleep(3000);
     PrintStringAndEndlineSlower("We have finished our work. Here we go!", 25);
     string command = "explorer.exe " + result_path + "/";
     ChangeSlantIntoBackSlant(command);
