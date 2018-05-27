@@ -19,4 +19,12 @@ string GetExtension(const string& filename){
   return extension;
 }
 
+void ChangeBackSlantIntoSlant(string& path){
+  for(int i = 0; i < path.size(); ++i) if(path[i] == '\\') path[i] = '/';
+}
+
+void ChangeSlantIntoBackSlant(string& path){
+  for(int i = 0; i < path.size(); ++i) if(path[i] == '/') path[i] = '\\';
+}
+
 #endif // FILE_PATH_OPERATOR_H_
