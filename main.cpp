@@ -17,6 +17,7 @@ void listFiles(const string& dir);
 void operateTargetFile(const string& target_path, const string& target_file);
 
 string result_path = "";  //用于存储保存结果的路径
+string_counter unamed;  //处理纯中文名的章节
 
 //计算MD5
 string CalMD5(const string& resource){
@@ -39,6 +40,7 @@ int main()
     result_path = temp;
     ChangeBackSlantIntoSlant(result_path);
 
+    unamed.initialize(2);
     listFiles(dir);
     PrintStringAndEndlineSlower("We have finished our work. Here we go!", 25);
     string command = "explorer.exe " + result_path + "/";
@@ -114,9 +116,13 @@ void operateTargetFile(const string& target_path, const string& target_file){
     }
     if(target == "img") record = true;
     if(target == "title"){
-      for(; c < '0' || c > '9'; fin>>c);
+      for(; (c < '0' || c > '9') && c != '}'; fin>>c);
       for(; c>='0' && c <= '9'; fin>>c) title.push_back(c);
       //cout<<"title = "<<title<<endl;
+      if(title.size() == 0){
+        title = "unamed" + unamed.get_counter();
+        unamed.add_one();
+      }
       break;
     }
     //(NOT)TODO: 修正中文乱码问题
