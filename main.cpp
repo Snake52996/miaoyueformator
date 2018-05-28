@@ -10,6 +10,7 @@
 #include "src/file_path_operator.h"
 #include "src/string_counter.h"
 #include "src/sweet_printer.h"
+#include "src/string_operator.h"
 
 using namespace std;
 
@@ -84,9 +85,11 @@ void listFiles(const string& dir)
 }
 
 void operateTargetFile(const string& target_path, const string& target_file){
+  ClearCli();  //清屏 
   PrintStringSlower("Try to open ", 25);
   PrintStringAndEndlineSlower(target_file.c_str(), 25);
   ifstream fin(target_file.c_str());
+  fin>>noskipws;
   queue<string> waiting_for_operate;
   string target;
   string title = "";
@@ -116,8 +119,9 @@ void operateTargetFile(const string& target_path, const string& target_file){
     }
     if(target == "img") record = true;
     if(target == "title"){
-      for(; c != '}'; fin>>c) if(c >= '0' && c <= '9') title.push_back(c);
+      for(; c != '}'; fin>>c) if((c >= '0' && c <= '9') || c == ' ' || c == '.' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) title.push_back(c);
       //cout<<"title = "<<title<<endl;
+      RemovePrefixAndSuffixSpace(title);  //去除前后缀空格 
       if(title.size() == 0){
         title = "unamed" + unamed.get_counter();
         unamed.add_one();
@@ -153,5 +157,6 @@ void operateTargetFile(const string& target_path, const string& target_file){
   PrintStringAndEndlineSlower(target_file.c_str(),25);
   cout<<endl;
   fin.close();
+  ClearCli();
   return;
 }
