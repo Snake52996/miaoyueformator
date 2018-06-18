@@ -2,10 +2,11 @@
 #include <fstream>
 #include <cstring>
 #include <cstdio>
-#include <locale>
 #include <queue>
 #include <windows.h>
 #include <io.h>
+#include <thread>
+#include <mutex>
 #include "src/md5_encode.h"
 #include "src/file_path_operator.h"
 #include "src/string_counter.h"
@@ -17,8 +18,27 @@ using namespace std;
 void listFiles(const string& dir);
 void operateTargetFile(const string& target_path, const string& target_file);
 
+//Bug: 在结果的第一个位置上会出现一个?
+string UTF8_To_string(const string& str){
+  int nwLen = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
+  wchar_t * pwBuf = new wchar_t[nwLen + 1];
+  memset(pwBuf, 0, nwLen * 2 + 2);
+  MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), pwBuf, nwLen);
+  int nLen = WideCharToMultiByte(CP_ACP, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
+  char * pBuf = new char[nLen + 1];
+  memset(pBuf, 0, nLen + 1);
+  WideCharToMultiByte(CP_ACP, 0, pwBuf, nwLen, pBuf, nLen, NULL, NULL);
+  string retStr = pBuf;
+  delete []pBuf;
+  delete []pwBuf;
+  pBuf = NULL;
+  pwBuf = NULL;
+  return retStr;
+}
+
 string result_path = "";  //用于存储保存结果的路径
-string_counter unamed;  //处理纯中文名的章节
+int checker = 0;
+mutex Rlock;
 
 //计算MD5
 string CalMD5(const string& resource){
@@ -41,7 +61,7 @@ int main()
     result_path = temp;
     ChangeBackSlantIntoSlant(result_path);
 
-    unamed.initialize(2);
+    //unamed.initialize(2);
     listFiles(dir);
     PrintStringAndEndlineSlower("We have finished our work. Here we go!", 25);
     string command = "explorer.exe " + result_path + "/";
@@ -75,19 +95,23 @@ void listFiles(const string& dir)
             string extension = GetExtension(findData.name);
             if(extension == ".txt"){
               dirNew = dir + "/" + findData.name;
-              operateTargetFile(dir, dirNew);  //找到了.txt的描述文件,开始操作
+              thread t{operateTargetFile, dir, dirNew};  //找到了.txt的描述文件,开始操作
+              t.detach();
             }
         }
 
     } while (_findnext(handle, &findData) == 0);
-
+    while(checker) Sleep(500);
     _findclose(handle);    // 关闭搜索句柄
 }
 
 void operateTargetFile(const string& target_path, const string& target_file){
-  ClearCli();  //清屏 
-  PrintStringSlower("Try to open ", 25);
-  PrintStringAndEndlineSlower(target_file.c_str(), 25);
+  //ClearCli();  //清屏
+  //PrintStringSlower("Try to open ", 25);
+  //PrintStringAndEndlineSlower(target_file.c_str(), 25);
+  Rlock.lock();
+  checker += 1;
+  Rlock.unlock();
   ifstream fin(target_file.c_str());
   fin>>noskipws;
   queue<string> waiting_for_operate;
@@ -119,44 +143,45 @@ void operateTargetFile(const string& target_path, const string& target_file){
     }
     if(target == "img") record = true;
     if(target == "title"){
-      for(; c != '}'; fin>>c) if((c >= '0' && c <= '9') || c == ' ' || c == '.' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) title.push_back(c);
-      //cout<<"title = "<<title<<endl;
-      RemovePrefixAndSuffixSpace(title);  //去除前后缀空格 
-      if(title.size() == 0){
-        title = "unamed" + unamed.get_counter();
-        unamed.add_one();
-      }
+      fin>>c;
+      fin>>c;
+      fin>>c;
+      for(;c != '\"'; fin>>c) title.push_back(c);
+      title = UTF8_To_string(title);
+      RemovePrefixAndSuffixSpace(title);  //去除前后缀空格
+      //cout<<title<<endl;
       break;
     }
-    //(NOT)TODO: 修正中文乱码问题
   }
-  /*/=================Debug=====================
-  while(!waiting_for_operate.empty()){
-    cout<<waiting_for_operate.front()<<endl;
-    waiting_for_operate.pop();
-  }
-  //==========================================*/
 
   //创建子目录
+  Rlock.lock();
   string command = "md \"" + result_path + "/" + title + "/\"";
-  //cout<<command<<endl;
-  //用字符串标识文件名
+  Rlock.unlock();
   string_counter filename;
   filename.initialize(3);
+  Rlock.lock();
   system(command.c_str());
+  Rlock.unlock();
   while(!waiting_for_operate.empty()){
     //复制文件
+    Rlock.lock();
     command = "copy \"" + target_path + "/" + waiting_for_operate.front() + "\" \"" + result_path + "/" + title + "/" + filename.get_counter() + ".jpg\"";
+    Rlock.unlock();
     ChangeSlantIntoBackSlant(command);
-    //cout<<command<<endl;
+    Rlock.lock();
     system(command.c_str());
+    Rlock.unlock();
     filename.add_one();
     waiting_for_operate.pop();
   }
-  PrintStringSlower("Finished ", 25);
-  PrintStringAndEndlineSlower(target_file.c_str(),25);
-  cout<<endl;
+  //PrintStringSlower("Finished ", 25);
+  //PrintStringAndEndlineSlower(target_file.c_str(),25);
+  //cout<<endl;
   fin.close();
-  ClearCli();
+  //ClearCli();
+  Rlock.lock();
+  checker -= 1;
+  Rlock.unlock();
   return;
 }

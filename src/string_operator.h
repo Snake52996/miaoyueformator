@@ -14,7 +14,7 @@ void RemovePrefixAndSuffixSpace(string& str){
   	break;
   }
   for(int i = 0; i <= end_of_string; ++i){
-  	if(str[i] != ' ') started = true;
+  	if(str[i] != ' ' && str[i] != '?') started = true;
   	if(started) temp.push_back(str[i]);
   }
   str = temp;
