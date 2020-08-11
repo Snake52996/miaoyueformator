@@ -12,4 +12,4 @@
 
 不排除因为多线程带来各种奇奇怪怪的问题的可能性.有时间我也不会继续改进的.
 
-虽然喵阅已经关闭了服务,但近期将基于miaoyueformator将处理喵阅下载文件的功能加入[HFormatter](https://github.com/Snake52996/HFormatter)作为留念.
+miaoyueformator已合并进入[HFormatter](https://github.com/Snake52996/HFormatter)作为留念.
